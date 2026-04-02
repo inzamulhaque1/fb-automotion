@@ -1,48 +1,31 @@
 """
-Auto Post - Lightweight script for GitHub Actions
-====================================================
-Runs every 90 min via cron.
-Posts in order (no repeats) + AI news mixed in.
+Auto Post - GitHub Actions Facebook Poster
+=============================================
+Uses date + hour to pick the right post.
+No state file needed - deterministic based on time.
+No duplicate posts within the same day.
 """
 
 import os
 import sys
-import json
 import random
 import logging
 import requests
 import feedparser
+from datetime import datetime, timezone, timedelta
 from bs4 import BeautifulSoup
 from posts import POSTS
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(message)s")
 logger = logging.getLogger("AutoPost")
 
-# Config from environment variables
 FB_TOKEN = os.getenv("FB_ACCESS_TOKEN", "")
 FB_PERSONAL_PAGE_ID = os.getenv("FB_PERSONAL_PAGE_ID", "")
-
 FB_GRAPH_URL = "https://graph.facebook.com/v25.0"
-STATE_FILE = "post_state.json"
 
+# Bangladesh timezone (UTC+6)
+BDT = timezone(timedelta(hours=6))
 
-# ============ State Management ============
-
-def load_state():
-    """Load which post index we're on."""
-    if os.path.exists(STATE_FILE):
-        with open(STATE_FILE, "r") as f:
-            return json.load(f)
-    return {"index": 0, "posted_count": 0}
-
-
-def save_state(state):
-    """Save current post index."""
-    with open(STATE_FILE, "w") as f:
-        json.dump(state, f)
-
-
-# ============ Facebook API ============
 
 def get_page_token(page_id):
     try:
@@ -69,6 +52,21 @@ def post_to_fb(page_id, message):
         return False
 
 
+def get_recent_posts():
+    """Check what was posted recently to avoid duplicates."""
+    try:
+        token = get_page_token(FB_PERSONAL_PAGE_ID)
+        url = f"{FB_GRAPH_URL}/{FB_PERSONAL_PAGE_ID}/feed"
+        params = {"access_token": token, "fields": "message", "limit": 15}
+        r = requests.get(url, params=params)
+        data = r.json()
+        if "data" in data:
+            return [p.get("message", "")[:80] for p in data["data"]]
+    except:
+        pass
+    return []
+
+
 # ============ AI News ============
 
 AI_NEWS_FEEDS = [
@@ -85,13 +83,11 @@ HOOKS = [
     "This is HUGE for anyone in tech.\n\n{title}",
     "Stop scrolling. Read this.\n\n{title}",
     "Everyone is talking about this today.\n\n{title}",
-    "If you're not paying attention to this, you're falling behind.\n\n{title}",
     "Most people will miss this. Don't be most people.\n\n{title}",
 ]
 
 
 def get_ai_news_post():
-    """Fetch real AI news and format as post."""
     for feed_url in AI_NEWS_FEEDS:
         try:
             feed = feedparser.parse(feed_url)
@@ -102,16 +98,14 @@ def get_ai_news_post():
                 if summary:
                     soup = BeautifulSoup(summary, "html.parser")
                     summary = soup.get_text()[:300]
-
                 hook = random.choice(HOOKS).format(title=title)
-                post = (
+                return (
                     f"{hook}\n\n"
                     f"{summary}\n\n"
-                    f"What do you think about this? Comment below.\n\n"
+                    f"What do you think? Comment below.\n\n"
                     f"Follow Inzamul Haque for daily AI updates.\n\n"
                     f"#AI #TechNews #ArtificialIntelligence"
                 )
-                return post
         except:
             continue
     return None
@@ -124,31 +118,53 @@ def main():
         logger.error("[!] Missing env vars")
         sys.exit(1)
 
-    state = load_state()
-    index = state["index"]
+    now = datetime.now(BDT)
+    day_of_year = now.timetuple().tm_yday  # 1-366
+    hour = now.hour
 
-    # Every 3rd post = AI news, rest = viral posts in order
-    if (state["posted_count"] + 1) % 3 == 0:
-        logger.info("[*] Generating AI news post...")
+    # Calculate which post slot this is (10 posts/day)
+    # Map hours to slots: 7,9,10,12,13,15,17,19,21,22
+    slot_hours = [7, 9, 10, 12, 13, 15, 17, 19, 21, 22]
+
+    # Find closest slot
+    slot = 0
+    for i, h in enumerate(slot_hours):
+        if hour >= h:
+            slot = i
+
+    # Post index = (day * 10 + slot) mod total posts
+    post_index = ((day_of_year - 1) * 10 + slot) % len(POSTS)
+
+    logger.info(f"[*] Day {day_of_year}, Hour {hour}, Slot {slot}, Post index {post_index}")
+
+    # Check recent posts to avoid duplicates
+    recent = get_recent_posts()
+    selected_post = POSTS[post_index]
+    first_line = selected_post.split('\n')[0][:60]
+
+    # If this post was already posted recently, use AI news instead
+    is_duplicate = any(first_line in r for r in recent)
+
+    if is_duplicate:
+        logger.info("[*] Post already posted recently, using AI news instead")
         post = get_ai_news_post()
         if not post:
-            post = POSTS[index % len(POSTS)]
-            index += 1
+            # Try next post in list
+            post_index = (post_index + 1) % len(POSTS)
+            post = POSTS[post_index]
+    elif slot % 3 == 0:
+        # Every 3rd slot = AI news
+        logger.info("[*] AI news slot")
+        post = get_ai_news_post()
+        if not post:
+            post = selected_post
     else:
-        logger.info(f"[*] Using post #{index + 1}/{len(POSTS)}...")
-        post = POSTS[index % len(POSTS)]
-        index += 1
+        post = selected_post
 
-    logger.info(f"[*] Post preview: {post[:80]}...")
+    logger.info(f"[*] Posting: {post[:80]}...")
 
     success = post_to_fb(FB_PERSONAL_PAGE_ID, post)
-
-    if success:
-        state["index"] = index
-        state["posted_count"] = state["posted_count"] + 1
-        save_state(state)
-        logger.info(f"[+] Done! Total posted: {state['posted_count']}")
-    else:
+    if not success:
         sys.exit(1)
 
 
