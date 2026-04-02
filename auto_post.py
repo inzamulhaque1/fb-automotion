@@ -211,8 +211,7 @@ def get_ai_news_post():
                 post = (
                     f"{hook}\n\n"
                     f"{summary}\n\n"
-                    f"Source: {source}\n"
-                    f"Read more: {link}\n\n"
+                    f"What do you think about this? Comment below.\n\n"
                     f"Follow Inzamul Haque for daily AI updates.\n\n"
                     f"#AI #TechNews #ArtificialIntelligence"
                 )
