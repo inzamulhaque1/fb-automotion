@@ -4,5 +4,7 @@ __pycache__/
 input/raw_videos/*
 output/gaming/*
 output/personal/*
+output/news/*
 assets/music/*
 !.gitkeep
+.claude/

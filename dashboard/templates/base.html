@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FB Automotion{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h2>FB <span class="accent">Automotion</span></h2>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/" class="{% if request.path == '/' %}active{% endif %}">
+                <span class="icon">📊</span> Dashboard
+            </a></li>
+            <li><a href="/gaming" class="{% if request.path == '/gaming' %}active{% endif %}">
+                <span class="icon">🎮</span> INZ-Gaming
+            </a></li>
+            <li><a href="/personal" class="{% if request.path == '/personal' %}active{% endif %}">
+                <span class="icon">💻</span> Inzamul Haque
+            </a></li>
+            <li><a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}">
+                <span class="icon">⚙️</span> Settings
+            </a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="status-indicator">
+                <span class="dot" id="ftp-dot"></span> FTP Server
+            </div>
+        </div>
+    </nav>
+
+    <main class="content">
+        <header class="top-bar">
+            <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+            <div class="top-bar-right">
+                <span class="time" id="current-time"></span>
+            </div>
+        </header>
+        <div class="page-content">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

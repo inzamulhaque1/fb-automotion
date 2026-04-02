@@ -1,0 +1,28 @@
+# Video Editing
+moviepy==2.1.2
+ffmpeg-python==0.2.0
+
+# Web Dashboard
+flask==3.1.0
+flask-socketio==5.5.1
+
+# Image Design
+Pillow>=9.2.0,<11.0
+
+# Facebook API
+requests==2.32.3
+
+# Content Collection
+feedparser==6.0.11
+beautifulsoup4==4.13.3
+
+# Scheduling
+apscheduler==3.11.0
+pytz>=2024.1
+
+# FTP Server
+pyftpdlib==2.0.1
+
+# Utilities
+python-dotenv==1.1.0
+watchdog==6.0.0

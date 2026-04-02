@@ -1,0 +1,491 @@
+{% extends "base.html" %}
+
+{% block title %}Inzamul Haque - FB Automotion{% endblock %}
+{% block page_title %}Inzamul Haque{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="controls-grid four-col">
+    <div class="stat-card">
+        <div class="stat-icon">🤖</div>
+        <div class="stat-info">
+            <h3 id="total-posts">0</h3>
+            <p>Total Posts</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📅</div>
+        <div class="stat-info">
+            <h3 id="total-days">0</h3>
+            <p>Days of Content</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🔥</div>
+        <div class="stat-info">
+            <h3>10</h3>
+            <p>Posts / Day</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🟢</div>
+        <div class="stat-info">
+            <h3>24/7</h3>
+            <p>GitHub Actions</p>
+        </div>
+    </div>
+</div>
+
+<!-- Day Tabs + Posts -->
+<div class="control-card full-width">
+    <div class="control-header personal-header">
+        <h2>Scheduled Posts</h2>
+        <button class="btn btn-start" onclick="openAddModal()">+ Add Post</button>
+    </div>
+    <!-- Day tabs -->
+    <div id="day-tabs" style="display:flex; gap:4px; padding:12px 16px; border-bottom:1px solid var(--border-color); overflow-x:auto;"></div>
+    <!-- Posts list -->
+    <div id="day-posts" style="max-height:70vh; overflow-y:auto;"></div>
+</div>
+
+<!-- Posted to Facebook -->
+<div class="control-card full-width">
+    <div class="control-header personal-header">
+        <h2>Posted to Facebook</h2>
+        <button class="btn btn-sm" style="background:#f1f5f9;color:var(--text-secondary);" onclick="loadPosted()">Refresh</button>
+    </div>
+    <div id="posted-posts" style="max-height:400px; overflow-y:auto;">
+        <div class="empty-state"><p>Loading...</p></div>
+    </div>
+</div>
+
+<!-- Add Post Modal -->
+<div id="add-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999; backdrop-filter:blur(4px);">
+    <div style="max-width:620px; margin:30px auto; background:var(--bg-card); border-radius:16px; border:1px solid var(--border-color); max-height:90vh; overflow:hidden; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--border-color);">
+            <h3 style="font-size:16px;">Add New Post</h3>
+            <button onclick="closeAddModal()" style="background:none; border:none; color:var(--text-primary); font-size:22px; cursor:pointer;">✕</button>
+        </div>
+        <div style="padding:16px 20px; flex:1; overflow-y:auto;">
+            <!-- AI Generator -->
+            <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:14px; margin-bottom:14px;">
+                <div style="font-size:13px; font-weight:600; color:#0369a1; margin-bottom:8px;">AI Post Generator</div>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="ai-topic" placeholder="Enter topic (e.g. 5 best AI tools for students)" style="flex:1; padding:10px 12px; border:1px solid #bae6fd; border-radius:8px; font-size:14px; background:white; color:var(--text-primary);">
+                    <select id="ai-lang" style="padding:8px; border:1px solid #bae6fd; border-radius:8px; font-size:13px; background:white;">
+                        <option value="en">English</option>
+                        <option value="bn">Bangla</option>
+                    </select>
+                </div>
+                <button class="btn" id="ai-gen-btn" onclick="generateWithAI()" style="background:#0284c7; color:white; margin-top:8px; width:100%;">Generate with AI</button>
+            </div>
+
+            <!-- Post text -->
+            <div style="font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Post Content (edit below or generate with AI above)</div>
+            <textarea id="add-textarea" placeholder="AI generated post will appear here...&#10;&#10;Or write manually." style="width:100%; min-height:280px; padding:14px; background:#f8fafc; border:1px solid var(--border-color); border-radius:10px; color:var(--text-primary); font-size:14px; font-family:inherit; line-height:1.7; resize:vertical;"></textarea>
+            <div id="add-alert" style="display:none; padding:10px; border-radius:8px; margin-top:10px; font-size:13px;"></div>
+        </div>
+        <div style="display:flex; gap:8px; padding:14px 20px; border-top:1px solid var(--border-color);">
+            <button class="btn btn-start" onclick="saveNewPost()" style="flex:1;">Save Post</button>
+            <button class="btn" onclick="previewNewPost()" style="background:#eff6ff; color:#3b82f6;">Preview</button>
+            <button class="btn" onclick="closeAddModal()" style="background:#f1f5f9; color:var(--text-secondary);">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="edit-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999; backdrop-filter:blur(4px);">
+    <div style="max-width:600px; margin:40px auto; background:var(--bg-card); border-radius:16px; border:1px solid var(--border-color); max-height:85vh; overflow:hidden; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--border-color);">
+            <h3 id="edit-title" style="font-size:16px;">Edit Post</h3>
+            <button onclick="closeEditModal()" style="background:none; border:none; color:var(--text-primary); font-size:22px; cursor:pointer;">✕</button>
+        </div>
+        <div style="padding:16px 20px; flex:1; overflow-y:auto;">
+            <textarea id="edit-textarea" style="width:100%; min-height:300px; padding:14px; background:#f8fafc; border:1px solid var(--border-color); border-radius:10px; color:var(--text-primary); font-size:14px; font-family:inherit; line-height:1.7; resize:vertical;"></textarea>
+        </div>
+        <div style="display:flex; gap:10px; padding:16px 20px; border-top:1px solid var(--border-color);">
+            <button class="btn btn-start" onclick="saveEdit()" style="flex:1;">Save Changes</button>
+            <button class="btn" onclick="closeEditModal()" style="background:#f1f5f9; color:var(--text-secondary);">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- FB Preview Modal -->
+<div id="preview-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999; backdrop-filter:blur(4px);">
+    <div style="max-width:500px; margin:40px auto; background:#242526; border-radius:12px; overflow:hidden;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px;">
+            <span style="color:#e4e6eb; font-size:14px; font-weight:600;">Facebook Preview</span>
+            <button onclick="closePreviewModal()" style="background:none; border:none; color:#e4e6eb; font-size:22px; cursor:pointer;">✕</button>
+        </div>
+        <div style="padding:0 16px 16px;">
+            <!-- FB Post Card -->
+            <div style="background:#3a3b3c; border-radius:10px; overflow:hidden;">
+                <div style="display:flex; align-items:center; gap:10px; padding:12px;">
+                    <div style="width:40px; height:40px; border-radius:50%; background:#4a90d9; display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:16px;">IH</div>
+                    <div>
+                        <div style="color:#e4e6eb; font-size:14px; font-weight:600;">Inzamul Haque Joy</div>
+                        <div style="color:#b0b3b8; font-size:12px;">Just now · 🌐</div>
+                    </div>
+                </div>
+                <div id="preview-text" style="padding:0 12px 12px; color:#e4e6eb; font-size:14px; line-height:1.6; white-space:pre-wrap; max-height:400px; overflow-y:auto;"></div>
+                <div style="border-top:1px solid #4a4b4d; display:flex; padding:6px 0;">
+                    <div style="flex:1; text-align:center; padding:8px; color:#b0b3b8; font-size:14px;">👍 Like</div>
+                    <div style="flex:1; text-align:center; padding:8px; color:#b0b3b8; font-size:14px;">💬 Comment</div>
+                    <div style="flex:1; text-align:center; padding:8px; color:#b0b3b8; font-size:14px;">↗️ Share</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.day-tab {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: #f8fafc;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+.day-tab:hover { background: #eff6ff; color: #3b82f6; }
+.day-tab.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+
+.post-item {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.15s;
+}
+.post-item:hover { background: #f8fafc; }
+.post-item:last-child { border-bottom: none; }
+
+.post-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #eff6ff;
+    color: #3b82f6;
+    font-size: 12px;
+    font-weight: 700;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.post-text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    max-height: 120px;
+    overflow: hidden;
+    position: relative;
+}
+
+.post-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+}
+.post-actions .btn { font-size: 12px; padding: 4px 12px; }
+
+.post-type-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    margin-left: 8px;
+}
+.tag-en { background: #dbeafe; color: #1d4ed8; }
+.tag-bn { background: #dcfce7; color: #16a34a; }
+.tag-news { background: #fef3c7; color: #b45309; }
+</style>
+
+<script>
+let allDays = [];
+let currentDay = 0;
+let editIndex = -1;
+
+// Load all posts
+function loadPosts() {
+    fetch('/api/posts/all')
+        .then(r => r.json())
+        .then(data => {
+            allDays = data.days;
+            document.getElementById('total-posts').textContent = data.total;
+            document.getElementById('total-days').textContent = data.days.length;
+            renderDayTabs();
+            renderPosts(0);
+        });
+}
+
+function renderDayTabs() {
+    const tabs = document.getElementById('day-tabs');
+    tabs.innerHTML = allDays.map((day, i) =>
+        `<button class="day-tab ${i === currentDay ? 'active' : ''}" onclick="selectDay(${i})">${day.label} (${day.count})</button>`
+    ).join('');
+}
+
+function selectDay(i) {
+    currentDay = i;
+    renderDayTabs();
+    renderPosts(i);
+}
+
+function renderPosts(dayIndex) {
+    const container = document.getElementById('day-posts');
+    const day = allDays[dayIndex];
+    if (!day || !day.posts.length) {
+        container.innerHTML = '<div class="empty-state"><p>No posts for this day.</p></div>';
+        return;
+    }
+
+    container.innerHTML = day.posts.map((post, i) => {
+        const isBangla = post.text.match(/[\u0980-\u09FF]/);
+        const isNews = post.text.includes('#TechNews') || post.text.includes('BREAKING');
+        const tag = isBangla ? '<span class="post-type-tag tag-bn">বাংলা</span>' :
+                    isNews ? '<span class="post-type-tag tag-news">AI News</span>' :
+                    '<span class="post-type-tag tag-en">English</span>';
+        const previewText = post.text.substring(0, 200).replace(/</g, '&lt;') + (post.text.length > 200 ? '...' : '');
+
+        return `
+        <div class="post-item">
+            <div style="display:flex; align-items:flex-start;">
+                <span class="post-num">${post.index + 1}</span>
+                <div style="flex:1;">
+                    <div style="font-size:14px; font-weight:600; color:var(--text-primary); margin-bottom:6px;">
+                        ${post.text.split('\\n')[0].substring(0, 60).replace(/</g, '&lt;')}
+                        ${tag}
+                    </div>
+                    <div class="post-text">${previewText}</div>
+                    <div class="post-actions">
+                        <button class="btn" style="background:#eff6ff;color:#3b82f6;" onclick="openPreview(${post.index})">👁 Preview</button>
+                        <button class="btn" style="background:#f1f5f9;color:var(--text-secondary);" onclick="openEdit(${post.index})">✏️ Edit</button>
+                        <button class="btn btn-start" onclick="postNow(${post.index}, this)">📤 Post Now</button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// Edit modal
+function openEdit(index) {
+    editIndex = index;
+    const post = findPost(index);
+    if (!post) return;
+    document.getElementById('edit-title').textContent = `Edit Post #${index + 1}`;
+    document.getElementById('edit-textarea').value = post.text;
+    document.getElementById('edit-modal').style.display = 'block';
+}
+
+function closeEditModal() {
+    document.getElementById('edit-modal').style.display = 'none';
+    editIndex = -1;
+}
+
+function saveEdit() {
+    const newText = document.getElementById('edit-textarea').value.trim();
+    if (!newText || editIndex < 0) return;
+
+    fetch('/api/posts/edit', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({index: editIndex, text: newText})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'saved') {
+            closeEditModal();
+            loadPosts(); // Refresh
+        }
+    });
+}
+
+// FB Preview modal
+function openPreview(index) {
+    const post = findPost(index);
+    if (!post) return;
+    document.getElementById('preview-text').textContent = post.text;
+    document.getElementById('preview-modal').style.display = 'block';
+}
+
+function closePreviewModal() {
+    document.getElementById('preview-modal').style.display = 'none';
+}
+
+// Post now
+function postNow(index, btn) {
+    btn.textContent = '⏳ Posting...';
+    btn.disabled = true;
+
+    fetch(`/api/posts/${index}/post-now`, {method: 'POST'})
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') {
+                btn.textContent = '✅ Posted!';
+                btn.style.background = 'var(--accent-success)';
+                setTimeout(loadPosted, 2000);
+            } else {
+                btn.textContent = '❌ Failed';
+                btn.style.background = 'var(--accent-gaming)';
+                btn.disabled = false;
+            }
+        });
+}
+
+// Find post by index across all days
+function findPost(index) {
+    for (const day of allDays) {
+        for (const post of day.posts) {
+            if (post.index === index) return post;
+        }
+    }
+    return null;
+}
+
+// Posted posts from FB
+function loadPosted() {
+    const container = document.getElementById('posted-posts');
+    container.innerHTML = '<div class="empty-state"><p>Loading from Facebook...</p></div>';
+
+    fetch('/api/personal/posted')
+        .then(r => r.json())
+        .then(data => {
+            if (data.posts && data.posts.length > 0) {
+                container.innerHTML = data.posts.map(post => {
+                    const time = new Date(post.time).toLocaleString('en-US', {
+                        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                    });
+                    const msg = (post.message || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    return `
+                    <div style="padding:12px 16px; border-bottom:1px solid var(--border-color); display:flex; gap:12px; align-items:flex-start;">
+                        <div style="min-width:32px; height:32px; background:#dcfce7; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px;">✅</div>
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-size:13px; color:var(--text-primary); line-height:1.5; white-space:pre-wrap; overflow:hidden; max-height:80px;">${msg}</div>
+                            <div style="display:flex; gap:12px; margin-top:4px; font-size:11px; color:var(--text-secondary);">
+                                <span>${time}</span>
+                                ${post.link ? `<a href="${post.link}" target="_blank" style="color:#3b82f6; text-decoration:none;">View on Facebook →</a>` : ''}
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+            } else {
+                container.innerHTML = '<div class="empty-state"><p>No posts yet.</p></div>';
+            }
+        })
+        .catch(() => {
+            container.innerHTML = '<div class="empty-state"><p>Could not load.</p></div>';
+        });
+}
+
+// AI Generate
+function generateWithAI() {
+    const topic = document.getElementById('ai-topic').value.trim();
+    const lang = document.getElementById('ai-lang').value;
+    if (!topic) return;
+
+    const btn = document.getElementById('ai-gen-btn');
+    btn.textContent = 'Generating...';
+    btn.disabled = true;
+
+    fetch('/api/posts/generate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({topic: topic, lang: lang})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            document.getElementById('add-textarea').value = data.text;
+            btn.textContent = 'Generated! Edit below if needed.';
+            setTimeout(() => {
+                btn.textContent = 'Generate with AI';
+                btn.disabled = false;
+            }, 2000);
+        } else {
+            btn.textContent = data.message || 'Failed. Try again.';
+            btn.disabled = false;
+        }
+    })
+    .catch(() => {
+        btn.textContent = 'Error. Try again.';
+        btn.disabled = false;
+    });
+}
+
+// Add post modal
+function openAddModal() {
+    document.getElementById('add-textarea').value = '';
+    document.getElementById('add-alert').style.display = 'none';
+    document.getElementById('add-modal').style.display = 'block';
+}
+
+function closeAddModal() {
+    document.getElementById('add-modal').style.display = 'none';
+}
+
+function saveNewPost() {
+    const text = document.getElementById('add-textarea').value.trim();
+    if (!text) return;
+
+    const alert = document.getElementById('add-alert');
+
+    fetch('/api/posts/add', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({text: text})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'saved') {
+            alert.textContent = data.message;
+            alert.style.background = '#dcfce7';
+            alert.style.color = '#16a34a';
+            alert.style.display = 'block';
+            setTimeout(() => {
+                closeAddModal();
+                loadPosts();
+            }, 1000);
+        } else {
+            alert.textContent = data.message;
+            alert.style.background = '#fee2e2';
+            alert.style.color = '#dc2626';
+            alert.style.display = 'block';
+        }
+    });
+}
+
+function previewNewPost() {
+    const text = document.getElementById('add-textarea').value.trim();
+    if (!text) return;
+    document.getElementById('preview-text').textContent = text;
+    document.getElementById('preview-modal').style.display = 'block';
+}
+
+// Close modals on outside click
+document.getElementById('add-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeAddModal();
+});
+document.getElementById('edit-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+});
+document.getElementById('preview-modal').addEventListener('click', function(e) {
+    if (e.target === this) closePreviewModal();
+});
+
+// Load on page open
+window.addEventListener('load', () => {
+    loadPosts();
+    loadPosted();
+});
+</script>
+{% endblock %}

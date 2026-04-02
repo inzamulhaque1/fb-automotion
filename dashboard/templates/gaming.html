@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}INZ-Gaming - FB Automotion{% endblock %}
+{% block page_title %}🎮 INZ-Gaming{% endblock %}
+
+{% block content %}
+<!-- Gaming Controls -->
+<div class="controls-grid">
+    <div class="control-card full-width">
+        <div class="control-header gaming-header">
+            <h2>Video Processing Pipeline</h2>
+            <div class="control-actions">
+                <button class="btn btn-start" onclick="startAutomation('gaming')">▶ Start All</button>
+                <button class="btn btn-stop" onclick="stopAutomation('gaming')">⏸ Stop</button>
+            </div>
+        </div>
+        <div class="pipeline-steps">
+            <div class="step">
+                <div class="step-icon">📥</div>
+                <div class="step-name">FTP Receive</div>
+                <div class="step-status" id="step-ftp">Waiting</div>
+            </div>
+            <div class="step-arrow">→</div>
+            <div class="step">
+                <div class="step-icon">✂️</div>
+                <div class="step-name">Trim</div>
+                <div class="step-status" id="step-trim">Waiting</div>
+            </div>
+            <div class="step-arrow">→</div>
+            <div class="step">
+                <div class="step-icon">🎨</div>
+                <div class="step-name">Effects</div>
+                <div class="step-status" id="step-effects">Waiting</div>
+            </div>
+            <div class="step-arrow">→</div>
+            <div class="step">
+                <div class="step-icon">🔤</div>
+                <div class="step-name">Text</div>
+                <div class="step-status" id="step-text">Waiting</div>
+            </div>
+            <div class="step-arrow">→</div>
+            <div class="step">
+                <div class="step-icon">🎵</div>
+                <div class="step-name">Music</div>
+                <div class="step-status" id="step-music">Waiting</div>
+            </div>
+            <div class="step-arrow">→</div>
+            <div class="step">
+                <div class="step-icon">📤</div>
+                <div class="step-name">Upload</div>
+                <div class="step-status" id="step-upload">Waiting</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Video Lists -->
+<div class="controls-grid">
+    <!-- Raw Videos -->
+    <div class="control-card">
+        <div class="control-header">
+            <h2>📥 Raw Videos ({{ raw_videos|length }})</h2>
+        </div>
+        <div class="video-list">
+            {% if raw_videos %}
+                {% for video in raw_videos %}
+                <div class="video-item">
+                    <span class="video-name">{{ video }}</span>
+                    <button class="btn btn-sm btn-start" onclick="processVideo('{{ video }}')">Process</button>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <p>No raw videos. Transfer from iPhone via FTP.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Processed Videos -->
+    <div class="control-card">
+        <div class="control-header">
+            <h2>✅ Ready to Upload ({{ processed_videos|length }})</h2>
+        </div>
+        <div class="video-list">
+            {% if processed_videos %}
+                {% for video in processed_videos %}
+                <div class="video-item">
+                    <span class="video-name">{{ video }}</span>
+                    <span class="badge badge-success">Ready</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <p>No processed videos yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Schedule -->
+<div class="control-card full-width">
+    <div class="control-header gaming-header">
+        <h2>📅 Upload Schedule</h2>
+    </div>
+    <div class="schedule-grid">
+        {% for time in schedule.time_slots %}
+        <div class="schedule-slot">
+            <span class="slot-time">{{ time }}</span>
+            <span class="slot-status">Pending</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function processVideo(filename) {
+    fetch('/api/gaming/process', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({filename: filename})
+    }).then(r => r.json()).then(data => {
+        addLog('Processing: ' + filename);
+    });
+}
+</script>
+{% endblock %}

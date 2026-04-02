@@ -1,0 +1,414 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - FB Automotion{% endblock %}
+{% block page_title %}⚙️ Settings{% endblock %}
+
+{% block content %}
+<!-- How To Modal -->
+<div id="howto-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:999; backdrop-filter:blur(4px);">
+    <div style="max-width:600px; margin:40px auto; background:var(--bg-card); border-radius:16px; border:1px solid var(--border-color); max-height:85vh; overflow-y:auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:20px 24px; border-bottom:1px solid var(--border-color); position:sticky; top:0; background:var(--bg-card); border-radius:16px 16px 0 0; z-index:1;">
+            <h2 style="font-size:18px;">📖 How to Get Token & Page ID</h2>
+            <button onclick="document.getElementById('howto-modal').style.display='none'" style="background:none; border:none; color:var(--text-primary); font-size:24px; cursor:pointer;">✕</button>
+        </div>
+        <div style="padding:24px;">
+            <!-- Step 1 -->
+            <div style="background:rgba(255,255,255,0.05); border-radius:12px; padding:18px; margin-bottom:14px; border-left:3px solid #ff9100;">
+                <h3 style="margin-bottom:8px; color:#ff9100; font-size:15px;">Step 1: Create Facebook App</h3>
+                <p style="color:var(--text-secondary); font-size:13px; line-height:1.7;">
+                    1. Open link below → Login<br>
+                    2. <strong>"My Apps"</strong> → <strong>"Create App"</strong><br>
+                    3. Select <strong>"Other"</strong> → <strong>"Business"</strong><br>
+                    4. Name: <strong>"FB Automotion"</strong> → Create
+                </p>
+                <a href="https://developers.facebook.com/apps/" target="_blank" class="btn btn-start btn-sm" style="text-decoration:none; display:inline-block; margin-top:8px;">
+                    🔗 Open Facebook Developers
+                </a>
+            </div>
+
+            <!-- Step 2 -->
+            <div style="background:rgba(255,255,255,0.05); border-radius:12px; padding:18px; margin-bottom:14px; border-left:3px solid #2196F3;">
+                <h3 style="margin-bottom:8px; color:#2196F3; font-size:15px;">Step 2: Get Access Token</h3>
+                <p style="color:var(--text-secondary); font-size:13px; line-height:1.7;">
+                    1. Open Graph API Explorer (link below)<br>
+                    2. Select your app from dropdown<br>
+                    3. <strong>"Permissions"</strong> e add koro:<br>
+                    <code style="background:rgba(255,255,255,0.1); padding:1px 5px; border-radius:3px; font-size:11px;">pages_manage_posts</code>
+                    <code style="background:rgba(255,255,255,0.1); padding:1px 5px; border-radius:3px; font-size:11px;">pages_read_engagement</code>
+                    <code style="background:rgba(255,255,255,0.1); padding:1px 5px; border-radius:3px; font-size:11px;">pages_show_list</code>
+                    <code style="background:rgba(255,255,255,0.1); padding:1px 5px; border-radius:3px; font-size:11px;">publish_video</code><br>
+                    4. Click <strong>"Generate Access Token"</strong><br>
+                    5. Select your pages → <strong>Copy token</strong>
+                </p>
+                <a href="https://developers.facebook.com/tools/explorer/" target="_blank" class="btn btn-sm" style="background:#2196F3; color:#fff; text-decoration:none; display:inline-block; margin-top:8px;">
+                    🔗 Open Graph API Explorer
+                </a>
+            </div>
+
+            <!-- Step 3 -->
+            <div style="background:rgba(255,255,255,0.05); border-radius:12px; padding:18px; margin-bottom:14px; border-left:3px solid #ff0040;">
+                <h3 style="margin-bottom:8px; color:#ff0040; font-size:15px;">Step 3: Get Page IDs</h3>
+                <p style="color:var(--text-secondary); font-size:13px; line-height:1.7;">
+                    1. Same Graph API Explorer e thako<br>
+                    2. URL box e likho: <code style="background:rgba(255,255,255,0.15); padding:2px 8px; border-radius:4px; color:#fff;">me/accounts</code><br>
+                    3. Click <strong>"Submit"</strong><br>
+                    4. Response e page er <strong>"id"</strong> copy koro:
+                </p>
+                <pre style="background:#0a0a1a; padding:12px; border-radius:8px; font-size:12px; overflow-x:auto; color:#90caf9; margin-top:8px;">{
+  "data": [
+    { "name": "Inzamul Haque", "id": "<span style="color:#00c853;">123456789</span>" },
+    { "name": "INZ-Gaming",    "id": "<span style="color:#ff0040;">987654321</span>" }
+  ]
+}</pre>
+            </div>
+
+            <!-- Step 4 -->
+            <div style="background:rgba(0,200,83,0.1); border-radius:12px; padding:18px; border-left:3px solid #00c853;">
+                <h3 style="margin-bottom:6px; color:#00c853; font-size:15px;">Step 4: Done!</h3>
+                <p style="color:var(--text-secondary); font-size:13px;">
+                    Close this modal → Paste Token + Page IDs → Save → Test Post!
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Facebook API Settings -->
+<div class="control-card full-width">
+    <div class="control-header" style="border-left: 3px solid #ff9100;">
+        <h2>🔑 Facebook Credentials</h2>
+        <div style="display:flex; gap:8px; align-items:center;">
+            <button class="btn btn-sm" style="background:rgba(255,255,255,0.1); color:var(--text-primary);" onclick="document.getElementById('howto-modal').style.display='block'">❓ How to get?</button>
+            <span class="badge" id="fb-status-badge">Not Connected</span>
+        </div>
+    </div>
+    <div class="settings-form">
+        <div id="fb-alert" style="display:none; padding:12px 16px; border-radius:8px; margin-bottom:16px; font-size:14px;"></div>
+
+        <div class="form-group">
+            <label>Access Token</label>
+            <div style="display:flex; gap:8px;">
+                <input type="password" placeholder="Paste your Facebook Access Token here" id="fb-token" style="flex:1;">
+                <button class="btn" style="background:rgba(255,255,255,0.1);color:var(--text-primary);padding:8px 12px;" onclick="
+                    const inp = document.getElementById('fb-token');
+                    inp.type = inp.type === 'password' ? 'text' : 'password';
+                    this.textContent = inp.type === 'password' ? '👁' : '🙈';
+                ">👁</button>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Personal Page ID (Inzamul Haque)</label>
+            <input type="text" placeholder="e.g. 102938475610293" id="fb-personal-id">
+        </div>
+        <div class="form-group">
+            <label>Gaming Page ID (INZ-Gaming)</label>
+            <input type="text" placeholder="e.g. 109283746501928" id="fb-gaming-id">
+        </div>
+        <div class="control-actions" style="flex-wrap:wrap;">
+            <button class="btn btn-start" onclick="saveFBSettings()" style="font-size:16px; padding:10px 24px;">💾 Save Settings</button>
+            <button class="btn" style="background:#2196F3;color:#fff;" onclick="testPost('personal')">🧪 Test Personal Post</button>
+            <button class="btn" style="background:#ff0040;color:#fff;" onclick="testPost('gaming')">🧪 Test Gaming Post</button>
+        </div>
+    </div>
+</div>
+
+<div class="controls-grid">
+    <!-- Gaming Settings -->
+    <div class="control-card">
+        <div class="control-header gaming-header">
+            <h2>🎮 INZ-Gaming Settings</h2>
+        </div>
+        <div class="settings-form">
+            <div class="form-group">
+                <label>Page Name</label>
+                <input type="text" value="{{ gaming.page_name }}" id="gaming-name">
+            </div>
+            <div class="form-group">
+                <label>Daily Videos</label>
+                <input type="number" value="{{ gaming.daily_posts }}" id="gaming-daily">
+            </div>
+            <div class="form-group">
+                <label>Video Lengths (min)</label>
+                <input type="text" value="{{ gaming.video_lengths }}" id="gaming-lengths">
+            </div>
+            <div class="form-group">
+                <label>Primary Color</label>
+                <input type="color" value="{{ gaming.theme.primary }}" id="gaming-color1">
+            </div>
+            <div class="form-group">
+                <label>Secondary Color</label>
+                <input type="color" value="{{ gaming.theme.secondary }}" id="gaming-color2">
+            </div>
+            <div class="form-group">
+                <label>Music Volume</label>
+                <input type="range" min="0" max="100" value="{{ (gaming.music_volume * 100)|int }}" id="gaming-volume">
+                <span id="volume-display">{{ (gaming.music_volume * 100)|int }}%</span>
+            </div>
+            <button class="btn btn-start" onclick="saveSettings('gaming')">Save Gaming Settings</button>
+        </div>
+    </div>
+
+    <!-- Personal Settings -->
+    <div class="control-card">
+        <div class="control-header personal-header">
+            <h2>💻 Inzamul Haque Settings</h2>
+        </div>
+        <div class="settings-form">
+            <div class="form-group">
+                <label>Page Name</label>
+                <input type="text" value="{{ personal.page_name }}" id="personal-name">
+            </div>
+            <div class="form-group">
+                <label>Daily Posts</label>
+                <input type="number" value="{{ personal.daily_posts }}" id="personal-daily">
+            </div>
+            <div class="form-group">
+                <label>Primary Color</label>
+                <input type="color" value="{{ personal.theme.primary }}" id="personal-color1">
+            </div>
+            <div class="form-group">
+                <label>Secondary Color</label>
+                <input type="color" value="{{ personal.theme.secondary }}" id="personal-color2">
+            </div>
+            <div class="form-group">
+                <label>Languages</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" checked> English</label>
+                    <label><input type="checkbox" checked> Bangla</label>
+                </div>
+            </div>
+            <button class="btn btn-start" onclick="saveSettings('personal')">Save Personal Settings</button>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Upload QR -->
+<div class="control-card full-width">
+    <div class="control-header" style="border-left: 3px solid #00c853;">
+        <h2>📱 Mobile Upload (iPhone)</h2>
+    </div>
+    <div style="display:flex; align-items:center; gap:30px; padding:24px; flex-wrap:wrap;">
+        <div style="text-align:center;">
+            <img src="/api/qrcode" alt="QR Code" style="width:180px; height:180px; border-radius:12px;">
+            <p style="margin-top:8px; font-size:12px; color:var(--text-secondary);">iPhone camera diye scan koro</p>
+        </div>
+        <div style="flex:1; min-width:250px;">
+            <h3 style="margin-bottom:12px;">Kivabe use korbe:</h3>
+            <div style="color:var(--text-secondary); font-size:14px; line-height:2;">
+                <p>1️⃣ iPhone ar PC <strong>same WiFi</strong> te connect koro</p>
+                <p>2️⃣ iPhone er <strong>Camera app</strong> diye QR code scan koro</p>
+                <p>3️⃣ Link e click koro - Upload page khulbe</p>
+                <p>4️⃣ Video select koro → <strong>Upload</strong> button click koro</p>
+                <p>5️⃣ Done! Video auto process hobe 🎉</p>
+            </div>
+            <div style="margin-top:12px; background:rgba(255,255,255,0.05); padding:10px 16px; border-radius:8px; display:flex; align-items:center; gap:8px;">
+                <span style="color:var(--text-secondary); font-size:13px;">Link:</span>
+                <span id="mobile-url" style="color:#00c853; font-size:14px; font-weight:600;">Loading...</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FTP Settings -->
+<div class="control-card full-width">
+    <div class="control-header">
+        <h2>📡 FTP Server Settings (Advanced)</h2>
+        <div class="control-actions">
+            <button class="btn btn-start" id="ftp-toggle-btn" onclick="toggleFTP()">▶ Start FTP</button>
+        </div>
+    </div>
+    <div class="ftp-info">
+        <div class="info-row">
+            <span class="label">Status:</span>
+            <span class="value" id="ftp-status-text" style="color: var(--accent-gaming);">⚫ Offline</span>
+        </div>
+        <div class="info-row">
+            <span class="label">Host:</span>
+            <span class="value" id="ftp-host">--</span>
+        </div>
+        <div class="info-row">
+            <span class="label">Port:</span>
+            <span class="value">2121</span>
+        </div>
+        <div class="info-row">
+            <span class="label">Username:</span>
+            <span class="value">inzamul</span>
+        </div>
+        <div class="info-row">
+            <span class="label">Password:</span>
+            <span class="value">automotion2026</span>
+        </div>
+        <div class="info-row">
+            <span class="label">iPhone App:</span>
+            <span class="value">Use any FTP app (FTPManager, Documents by Readdle)</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('gaming-volume').addEventListener('input', function() {
+    document.getElementById('volume-display').textContent = this.value + '%';
+});
+
+// Load saved FB settings on page load
+window.addEventListener('load', function() {
+    fetch('/api/settings/facebook')
+        .then(r => r.json())
+        .then(data => {
+            if (data.has_token) {
+                document.getElementById('fb-token').placeholder = 'Token saved: ' + data.masked_token;
+                document.getElementById('fb-status-badge').textContent = 'Connected';
+                document.getElementById('fb-status-badge').className = 'badge badge-success';
+            }
+            if (data.personal_page_id) {
+                document.getElementById('fb-personal-id').value = data.personal_page_id;
+            }
+            if (data.gaming_page_id) {
+                document.getElementById('fb-gaming-id').value = data.gaming_page_id;
+            }
+        });
+});
+
+function showAlert(msg, type) {
+    const alert = document.getElementById('fb-alert');
+    alert.style.display = 'block';
+    alert.textContent = msg;
+    if (type === 'success') {
+        alert.style.background = 'rgba(0,200,83,0.2)';
+        alert.style.color = '#00c853';
+    } else {
+        alert.style.background = 'rgba(255,0,64,0.2)';
+        alert.style.color = '#ff0040';
+    }
+    setTimeout(() => { alert.style.display = 'none'; }, 5000);
+}
+
+function saveFBSettings() {
+    const token = document.getElementById('fb-token').value;
+    const gamingId = document.getElementById('fb-gaming-id').value;
+    const personalId = document.getElementById('fb-personal-id').value;
+
+    if (!token && !gamingId && !personalId) {
+        showAlert('Please fill at least one field!', 'error');
+        return;
+    }
+
+    fetch('/api/settings/facebook', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            access_token: token,
+            gaming_page_id: gamingId,
+            personal_page_id: personalId
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'saved') {
+            showAlert('Settings saved successfully!', 'success');
+            document.getElementById('fb-status-badge').textContent = 'Connected';
+            document.getElementById('fb-status-badge').className = 'badge badge-success';
+            document.getElementById('fb-token').value = '';
+            document.getElementById('fb-token').placeholder = 'Token saved (hidden for security)';
+            addLog('Facebook settings saved');
+        } else {
+            showAlert('Failed to save: ' + data.message, 'error');
+        }
+    })
+    .catch(err => {
+        showAlert('Error: ' + err.message, 'error');
+    });
+}
+
+function testPost(pageType) {
+    const btn = event.target;
+    btn.textContent = 'Sending...';
+    btn.disabled = true;
+
+    fetch('/api/test-post', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({page: pageType})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showAlert(data.message, 'success');
+            addLog('Test post sent to ' + pageType + ' page!');
+        } else {
+            showAlert(data.message, 'error');
+        }
+        btn.textContent = pageType === 'personal' ? '🧪 Test Personal Post' : '🧪 Test Gaming Post';
+        btn.disabled = false;
+    })
+    .catch(err => {
+        showAlert('Error: ' + err.message, 'error');
+        btn.textContent = pageType === 'personal' ? '🧪 Test Personal Post' : '🧪 Test Gaming Post';
+        btn.disabled = false;
+    });
+}
+
+let ftpRunning = false;
+
+function toggleFTP() {
+    if (ftpRunning) {
+        fetch('/api/ftp/stop', {method: 'POST'}).then(r => r.json()).then(data => {
+            ftpRunning = false;
+            updateFTPUI();
+            addLog('FTP Server stopped');
+        });
+    } else {
+        const btn = document.getElementById('ftp-toggle-btn');
+        btn.textContent = '⏳ Starting...';
+        btn.disabled = true;
+        fetch('/api/ftp/start', {method: 'POST'}).then(r => r.json()).then(data => {
+            ftpRunning = true;
+            if (data.ip) {
+                document.getElementById('ftp-host').textContent = data.ip;
+            }
+            updateFTPUI();
+            addLog('FTP Server started on ' + (data.ip || ''));
+            btn.disabled = false;
+        });
+    }
+}
+
+function updateFTPUI() {
+    const btn = document.getElementById('ftp-toggle-btn');
+    const statusText = document.getElementById('ftp-status-text');
+    if (ftpRunning) {
+        btn.textContent = '⏸ Stop FTP';
+        btn.className = 'btn btn-stop';
+        statusText.textContent = '🟢 Online';
+        statusText.style.color = 'var(--accent-success)';
+    } else {
+        btn.textContent = '▶ Start FTP';
+        btn.className = 'btn btn-start';
+        statusText.textContent = '⚫ Offline';
+        statusText.style.color = 'var(--accent-gaming)';
+        document.getElementById('ftp-host').textContent = '--';
+    }
+}
+
+// Load mobile URL
+fetch('/api/mobile-url').then(r => r.json()).then(data => {
+    document.getElementById('mobile-url').textContent = data.url;
+});
+
+// Check FTP status on load
+fetch('/api/status').then(r => r.json()).then(data => {
+    ftpRunning = data.state.ftp.running;
+    if (ftpRunning && data.state.ftp.ip) {
+        document.getElementById('ftp-host').textContent = data.state.ftp.ip;
+    }
+    updateFTPUI();
+});
+
+function saveSettings(type) {
+    addLog(type + ' settings saved');
+    showAlert(type + ' settings saved!', 'success');
+}
+</script>
+{% endblock %}

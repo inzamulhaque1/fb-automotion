@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - FB Automotion{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon gaming">🎮</div>
+        <div class="stat-info">
+            <h3 id="raw-count">{{ stats.raw_videos }}</h3>
+            <p>Raw Videos</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon gaming">✅</div>
+        <div class="stat-info">
+            <h3 id="gaming-ready">{{ stats.gaming_ready }}</h3>
+            <p>Gaming Ready</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon personal">📝</div>
+        <div class="stat-info">
+            <h3 id="personal-ready">{{ stats.personal_ready }}</h3>
+            <p>Personal Posts</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon success">📡</div>
+        <div class="stat-info">
+            <h3 id="ftp-status">Offline</h3>
+            <p>FTP Server</p>
+        </div>
+    </div>
+</div>
+
+<!-- Automation Controls -->
+<div class="controls-grid">
+    <!-- Gaming Control -->
+    <div class="control-card">
+        <div class="control-header gaming-header">
+            <h2>🎮 INZ-Gaming</h2>
+            <span class="badge" id="gaming-badge">Stopped</span>
+        </div>
+        <div class="control-body">
+            <div class="control-stats">
+                <div class="mini-stat">
+                    <span class="label">Processed</span>
+                    <span class="value" id="gaming-processed">{{ stats.state.gaming.videos_processed }}</span>
+                </div>
+                <div class="mini-stat">
+                    <span class="label">Uploaded</span>
+                    <span class="value" id="gaming-uploaded">{{ stats.state.gaming.videos_uploaded }}</span>
+                </div>
+                <div class="mini-stat">
+                    <span class="label">Queue</span>
+                    <span class="value" id="gaming-queued">{{ stats.state.gaming.videos_queued }}</span>
+                </div>
+            </div>
+            <div class="control-actions" id="gaming-controls">
+                <button class="btn btn-start" id="gaming-start-btn" onclick="toggleAutomation('gaming')">▶ Start</button>
+            </div>
+            <div class="schedule-info">
+                <h4>Schedule</h4>
+                <p>{{ stats.gaming_schedule.posts_per_day }} videos/day</p>
+                <div class="time-slots">
+                    {% for time in stats.gaming_schedule.time_slots %}
+                    <span class="time-badge">{{ time }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Personal Control -->
+    <div class="control-card">
+        <div class="control-header personal-header">
+            <h2>💻 Inzamul Haque</h2>
+            <span class="badge" id="personal-badge">Stopped</span>
+        </div>
+        <div class="control-body">
+            <div class="control-stats">
+                <div class="mini-stat">
+                    <span class="label">Created</span>
+                    <span class="value" id="personal-created">{{ stats.state.personal.posts_created }}</span>
+                </div>
+                <div class="mini-stat">
+                    <span class="label">Uploaded</span>
+                    <span class="value" id="personal-uploaded">{{ stats.state.personal.posts_uploaded }}</span>
+                </div>
+                <div class="mini-stat">
+                    <span class="label">Queue</span>
+                    <span class="value" id="personal-queued">{{ stats.state.personal.posts_queued }}</span>
+                </div>
+            </div>
+            <div class="control-actions" id="personal-controls">
+                <button class="btn btn-start" id="personal-start-btn" onclick="toggleAutomation('personal')">▶ Start</button>
+            </div>
+            <div class="schedule-info">
+                <h4>Schedule</h4>
+                <p>{{ stats.personal_schedule.posts_per_day }} posts/day</p>
+                <div class="time-slots">
+                    {% for time in stats.personal_schedule.time_slots %}
+                    <span class="time-badge">{{ time }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Log -->
+<div class="activity-card">
+    <div class="control-header">
+        <h2>📋 Activity Log</h2>
+    </div>
+    <div class="log-body" id="activity-log">
+        <div class="log-entry">
+            <span class="log-time">--:--</span>
+            <span class="log-msg">System ready. Waiting for automation to start...</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Track states
+let gamingRunning = false;
+let personalRunning = false;
+
+function toggleAutomation(type) {
+    if (type === 'gaming') {
+        if (gamingRunning) {
+            stopAutomation('gaming');
+        } else {
+            startAutomation('gaming');
+        }
+    } else {
+        if (personalRunning) {
+            stopAutomation('personal');
+        } else {
+            startAutomation('personal');
+        }
+    }
+}
+
+function updateButtons(state) {
+    // Gaming button
+    const gBtn = document.getElementById('gaming-start-btn');
+    const gBadge = document.getElementById('gaming-badge');
+    if (state.gaming.running) {
+        gamingRunning = true;
+        gBtn.textContent = '⏸ Stop';
+        gBtn.className = 'btn btn-stop';
+        gBadge.textContent = 'Running';
+        gBadge.className = 'badge badge-running';
+    } else {
+        gamingRunning = false;
+        gBtn.textContent = '▶ Start';
+        gBtn.className = 'btn btn-start';
+        gBadge.textContent = 'Stopped';
+        gBadge.className = 'badge';
+    }
+
+    // Personal button
+    const pBtn = document.getElementById('personal-start-btn');
+    const pBadge = document.getElementById('personal-badge');
+    if (state.personal.running) {
+        personalRunning = true;
+        pBtn.textContent = '⏸ Stop';
+        pBtn.className = 'btn btn-stop';
+        pBadge.textContent = 'Running';
+        pBadge.className = 'badge badge-running';
+    } else {
+        personalRunning = false;
+        pBtn.textContent = '▶ Start';
+        pBtn.className = 'btn btn-start';
+        pBadge.textContent = 'Stopped';
+        pBadge.className = 'badge';
+    }
+
+    // FTP status
+    const ftpEl = document.getElementById('ftp-status');
+    const ftpDot = document.getElementById('ftp-dot');
+    if (state.ftp.running) {
+        ftpEl.textContent = 'Online';
+        ftpEl.style.color = 'var(--accent-success)';
+        if (ftpDot) ftpDot.className = 'dot active';
+    } else {
+        ftpEl.textContent = 'Offline';
+        ftpEl.style.color = '';
+        if (ftpDot) ftpDot.className = 'dot';
+    }
+}
+
+// Override the socket status update
+socket.on('status_update', function(state) {
+    updateDashboard(state);
+    updateButtons(state);
+});
+
+// Initial state check
+fetch('/api/status').then(r => r.json()).then(data => {
+    updateButtons(data.state);
+});
+</script>
+{% endblock %}
