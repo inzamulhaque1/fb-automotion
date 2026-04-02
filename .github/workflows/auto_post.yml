@@ -1,0 +1,30 @@
+name: Auto Post to Facebook
+
+on:
+  schedule:
+    # Run every 90 minutes (covers 10 posts/day)
+    - cron: '0 1,3,4,6,7,9,10,12,13,15 * * *'  # UTC times
+  workflow_dispatch: # Manual trigger button
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests feedparser beautifulsoup4
+
+      - name: Run auto post
+        env:
+          FB_ACCESS_TOKEN: ${{ secrets.FB_ACCESS_TOKEN }}
+          FB_PERSONAL_PAGE_ID: ${{ secrets.FB_PERSONAL_PAGE_ID }}
+          FB_GAMING_PAGE_ID: ${{ secrets.FB_GAMING_PAGE_ID }}
+        run: python auto_post.py
